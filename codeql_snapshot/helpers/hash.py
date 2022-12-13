@@ -1,7 +1,14 @@
 from hashlib import sha256
+from models.snapshot import Snapshot
 
 
-def sha256_hexdigest(content: str | bytes):
+def snapshot_hash(snapshot: Snapshot) -> str:
+    return sha256_hexdigest(
+        f"{snapshot.project_url}-{snapshot.branch}-{snapshot.commit}"
+    )
+
+
+def sha256_hexdigest(content: str | bytes) -> str:
     if isinstance(content, str):
         content = content.encode("UTF-8")
 
