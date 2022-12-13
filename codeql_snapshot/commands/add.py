@@ -17,9 +17,7 @@ from tempfile import TemporaryDirectory
 @click.option("--branch")
 @click.option("--commit")
 @click.argument(
-    "source-root",
-    type=click.Path(exists=True, path_type=Path, file_okay=False),
-    default=Path.cwd(),
+    "source-root", type=click.Path(exists=True, path_type=Path, file_okay=False)
 )
 @click.pass_context
 def command(
