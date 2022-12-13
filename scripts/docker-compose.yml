@@ -1,0 +1,15 @@
+services:
+  object-storage:
+    image: quay.io/minio/minio
+    command: server /data --console-address ":9090"
+    ports:
+      - 9000:9000
+      - 9090:9090
+    env_file: ./minio.env
+
+  database:
+    image: postgres
+    ports:
+      - 5432:5432
+    env_file: ./postgres.env
+
