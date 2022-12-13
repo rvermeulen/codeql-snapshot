@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from models import Snapshot, SnapshotState
 from beautifultable import BeautifulTable
 from shutil import get_terminal_size
-from helpers.hash import snapshot_hash
 from typing import Dict
 import json
 
@@ -27,7 +26,7 @@ def command(ctx: click.Context, format: str):
             for snapshot in snapshots:
                 table.append_row(
                     [
-                        snapshot_hash(snapshot),
+                        snapshot.global_id(),
                         snapshot.project_url,
                         snapshot.branch,
                         snapshot.commit,
@@ -39,7 +38,7 @@ def command(ctx: click.Context, format: str):
 
             def snapshot_to_dict(snapshot: Snapshot) -> Dict[str, str]:
                 return {
-                    "global-id": snapshot_hash(snapshot),
+                    "global-id": snapshot.global_id(),
                     "project-url": snapshot.project_url,
                     "branch": snapshot.branch,
                     "commit": snapshot.commit,

@@ -2,6 +2,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from models.base import Base
 from enum import Enum
+from helpers.hash import sha256_hexdigest
 
 
 class SnapshotState(Enum):
@@ -24,3 +25,6 @@ class Snapshot(Base):
     branch: Mapped[str] = mapped_column(String(255))
     commit: Mapped[str] = mapped_column(String(40))
     state: Mapped[SnapshotState]
+
+    def global_id(self) -> str:
+        return sha256_hexdigest(f"{self.project_url}-{self.branch}-{self.commit}")

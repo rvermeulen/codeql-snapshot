@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from minio import Minio
 from minio.error import S3Error
 from models import Snapshot, SnapshotState
-from helpers.hash import snapshot_hash
 from helpers.zip import zipdir, ZipError
 from tempfile import TemporaryDirectory
 
@@ -173,7 +172,7 @@ def resolve_commit(source_root: Path):
 
 
 def has_source_object(ctx: click.Context, snapshot: Snapshot) -> bool:
-    global_id = snapshot_hash(snapshot)
+    global_id = snapshot.global_id()
     try:
         ctx.obj["storage"]["client"].stat_object(
             ctx.obj["storage"]["buckets"]["source"], global_id
@@ -187,7 +186,7 @@ def has_source_object(ctx: click.Context, snapshot: Snapshot) -> bool:
 
 
 def create_source_object(ctx: click.Context, snapshot: Snapshot, source_root: Path):
-    global_id = snapshot_hash(snapshot)
+    global_id = snapshot.global_id()
     with TemporaryDirectory() as tmpdir:
         tmpzip = (Path(tmpdir) / global_id).with_suffix(".zip")
         zipdir(source_root, tmpzip)
