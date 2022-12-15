@@ -1,2 +1,2 @@
 from .base import Base
-from .snapshot import Snapshot, SnapshotState
+from .snapshot import Snapshot, SnapshotState, SnaphotLanguage

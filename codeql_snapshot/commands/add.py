@@ -6,15 +6,23 @@ from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 from minio import Minio
 from minio.error import S3Error
-from models import Snapshot, SnapshotState
-from helpers.zip import zipdir, ZipError
-from tempfile import TemporaryDirectory
+from models import Snapshot, SnapshotState, SnaphotLanguage
+from helpers.zip import ZipError
+from helpers.object_store import has_source_object, create_source_object
 
 
 @click.command(name="add")
 @click.option("--project-url")
 @click.option("--branch")
 @click.option("--commit")
+@click.option(
+    "--language",
+    type=click.Choice(
+        ["cpp", "java", "javascript", "swift", "go", "csharp", "python", "ruby"],
+        case_sensitive=False,
+    ),
+    required=True,
+)
 @click.argument(
     "source-root", type=click.Path(exists=True, path_type=Path, file_okay=False)
 )
@@ -24,6 +32,7 @@ def command(
     project_url: Optional[str],
     branch: Optional[str],
     commit: Optional[str],
+    language: str,
     source_root: Path,
 ):
     if project_url == None:
@@ -55,8 +64,8 @@ def command(
             .where(Snapshot.project_url == project_url)
             .where(Snapshot.branch == branch)
             .where(Snapshot.commit == commit)
+            .where(Snapshot.language == SnaphotLanguage[language.upper()])
         )
-
         existing_snapshot = session.scalar(stmt)
         if existing_snapshot:
             if existing_snapshot.state == SnapshotState.BUILD_FAILED:
@@ -107,8 +116,11 @@ def command(
                 project_url=project_url,
                 branch=branch,
                 commit=commit,
-                state=SnapshotState.NOT_BUILT,
+                language=SnaphotLanguage[language.upper()],
             )
+            # Add and commit the new snapshot first so the global id is generated.
+            session.add(new_snapshot)
+            session.commit()
             try:
                 create_source_object(ctx, new_snapshot, source_root)
             except S3Error as err:
@@ -122,7 +134,6 @@ def command(
                 )
                 new_snapshot.state = SnapshotState.SNAPSHOT_FAILED
 
-            session.add(new_snapshot)
         session.commit()
 
 
@@ -169,28 +180,3 @@ def resolve_commit(source_root: Path):
         return completed_proc.stdout.strip()
     else:
         return None
-
-
-def has_source_object(ctx: click.Context, snapshot: Snapshot) -> bool:
-    global_id = snapshot.global_id()
-    try:
-        ctx.obj["storage"]["client"].stat_object(
-            ctx.obj["storage"]["buckets"]["source"], global_id
-        )
-        return True
-    except S3Error as err:
-        if err.code == "NoSuchKey":
-            return False
-        else:
-            raise err
-
-
-def create_source_object(ctx: click.Context, snapshot: Snapshot, source_root: Path):
-    global_id = snapshot.global_id()
-    with TemporaryDirectory() as tmpdir:
-        tmpzip = (Path(tmpdir) / global_id).with_suffix(".zip")
-        zipdir(source_root, tmpzip)
-
-        ctx.obj["storage"]["client"].fput_object(
-            ctx.obj["storage"]["buckets"]["source"], global_id, str(tmpzip)
-        )

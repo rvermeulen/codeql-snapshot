@@ -19,17 +19,18 @@ def command(ctx: click.Context, format: str):
 
         if format == "table":
             table = BeautifulTable(maxwidth=get_terminal_size()[0])
-            table.columns.header = "Global Id,Project Url,Branch,Commit,State".split(
-                ","
+            table.columns.header = (
+                "Global Id,Project Url,Branch,Commit,Language,State".split(",")
             )
             table.columns.alignment = BeautifulTable.ALIGN_LEFT
             for snapshot in snapshots:
                 table.append_row(
                     [
-                        snapshot.global_id(),
+                        snapshot.global_id,
                         snapshot.project_url,
                         snapshot.branch,
                         snapshot.commit,
+                        snapshot.language.name,
                         snapshot.state.name,
                     ]
                 )
@@ -38,10 +39,11 @@ def command(ctx: click.Context, format: str):
 
             def snapshot_to_dict(snapshot: Snapshot) -> Dict[str, str]:
                 return {
-                    "global-id": snapshot.global_id(),
+                    "global-id": snapshot.global_id,
                     "project-url": snapshot.project_url,
                     "branch": snapshot.branch,
                     "commit": snapshot.commit,
+                    "langauge": snapshot.language.name,
                     "state": snapshot.state.name,
                 }
 
