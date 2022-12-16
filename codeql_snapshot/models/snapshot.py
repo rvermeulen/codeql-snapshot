@@ -37,10 +37,18 @@ def get_global_id(context: DefaultExecutionContext) -> str:
     return sha256_hexdigest(f"{project_url}-{branch}-{commit}-{language}")
 
 
+def get_source_id(context: DefaultExecutionContext) -> str:
+    project_url = context.get_current_parameters()["project_url"]
+    branch = context.get_current_parameters()["branch"]
+    commit = context.get_current_parameters()["commit"]
+    return sha256_hexdigest(f"{project_url}-{branch}-{commit}")
+
+
 class Snapshot(Base):
     __tablename__ = "snapshots"
 
     global_id: Mapped[str] = mapped_column(default=get_global_id, init=False)
+    source_id: Mapped[str] = mapped_column(default=get_source_id, init=False)
     # https://support.microsoft.com/en-us/topic/maximum-url-length-is-2-083-characters-in-internet-explorer-174e7c8a-6666-f4e0-6fd6-908b53c12246
     project_url: Mapped[str] = mapped_column(String(2048), primary_key=True)
     branch: Mapped[str] = mapped_column(String(255), primary_key=True)
