@@ -29,7 +29,7 @@ class CodeQL:
         source_root: Path,
         database: Path,
         **kwargs: Tuple[str, str],
-    ):
+    ) -> None:
         cp = self._exec(
             "database",
             "create",
@@ -54,3 +54,32 @@ class CodeQL:
         if cp.returncode != 0:
             raise CodeQLException(f"Failed to run {cp.args} command!")
         return bundle_path
+
+    def database_unbundle(self, bundled_database: Path) -> None:
+        unbundled_database_name = bundled_database.with_suffix("").stem
+        cp = self._exec(
+            "database",
+            "unbundle",
+            f"--name={unbundled_database_name}",
+            f"--target={bundled_database.parent}",
+            "--",
+            str(bundled_database),
+        )
+
+        if cp.returncode != 0:
+            raise CodeQLException(f"Failed to run {cp.args} command!")
+
+    def database_analyze(self, database: Path, sarif: Path) -> None:
+        cp = self._exec(
+            "database",
+            "analyze",
+            "--format=sarifv2.1.0",
+            f"--output={sarif}",
+            "--sarif-add-file-contents",
+            "--",
+            str(database),
+        )
+
+        if cp.returncode != 0:
+            print(cp.stderr)
+            raise CodeQLException(f"Failed to run {cp.args} command!")
