@@ -60,8 +60,8 @@ class Snapshot(Base):
         SqlEnum(SnapshotState), default=SnapshotState.NOT_BUILT
     )
 
-    @validates("project_url", "branch", "commit", "language")
-    def ensure_read_only(self, key: str, value: Any) -> Any:
+    @validates("global_id", "source_id", "project_url", "branch", "commit", "language")
+    def ensure_write_once(self, key: str, value: Any) -> Any:
         existing = getattr(self, key)
         if existing:
             raise ValueError(f"The field {key} should not be updated!")
