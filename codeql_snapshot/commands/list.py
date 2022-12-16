@@ -47,7 +47,7 @@ def command(ctx: click.Context, format: str):
                     "project-url": snapshot.project_url,
                     "branch": snapshot.branch,
                     "commit": snapshot.commit,
-                    "langauge": snapshot.language.name,
+                    "language": snapshot.language.name,
                     "state": snapshot.state.name,
                 }
 
