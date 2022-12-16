@@ -7,17 +7,31 @@ from helpers.zip import zipdir
 from tempfile import TemporaryDirectory
 
 
-def has_source_object(ctx: click.Context, snapshot: Snapshot) -> bool:
+def _has_object(client: Minio, bucket: str, key: str) -> bool:
     try:
-        ctx.obj["storage"]["client"].stat_object(
-            ctx.obj["storage"]["buckets"]["source"], snapshot.source_id
-        )
+        client.stat_object(bucket, key)
         return True
     except S3Error as err:
         if err.code == "NoSuchKey":
             return False
         else:
             raise err
+
+
+def _get_object(client: Minio, bucket: str, key: str, object_file: Path) -> None:
+    client.fget_object(bucket, key, str(object_file))
+
+
+def _create_object(client: Minio, bucket: str, key: str, object_file: Path) -> None:
+    client.fput_object(bucket, key, str(object_file))
+
+
+def has_source_object(ctx: click.Context, snapshot: Snapshot) -> bool:
+    return _has_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["source"],
+        snapshot.source_id,
+    )
 
 
 def create_source_object(
@@ -27,24 +41,76 @@ def create_source_object(
         tmpzip = (Path(tmpdir) / snapshot.global_id).with_suffix(".zip")
         zipdir(source_root, tmpzip)
 
-        ctx.obj["storage"]["client"].fput_object(
-            ctx.obj["storage"]["buckets"]["source"], snapshot.source_id, str(tmpzip)
+        _create_object(
+            ctx.obj["storage"]["client"],
+            ctx.obj["storage"]["buckets"]["source"],
+            snapshot.source_id,
+            tmpzip,
         )
 
 
 def get_source_object(
     ctx: click.Context, snapshot: Snapshot, object_file: Path
 ) -> None:
-    client: Minio = ctx.obj["storage"]["client"]
-    source_bucket: str = ctx.obj["storage"]["buckets"]["source"]
-    client.fget_object(source_bucket, snapshot.source_id, str(object_file))
+    _get_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["source"],
+        snapshot.source_id,
+        object_file,
+    )
+
+
+def has_database_object(ctx: click.Context, snapshot: Snapshot) -> bool:
+    return _has_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["database"],
+        snapshot.global_id,
+    )
 
 
 def create_database_object(
     ctx: click.Context, snapshot: Snapshot, database_bundle: Path
 ) -> None:
-    ctx.obj["storage"]["client"].fput_object(
+    _create_object(
+        ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["database"],
         snapshot.global_id,
-        str(database_bundle),
+        database_bundle,
+    )
+
+
+def get_database_object(
+    ctx: click.Context, snapshot: Snapshot, object_file: Path
+) -> None:
+    _get_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["database"],
+        snapshot.global_id,
+        object_file,
+    )
+
+
+def has_sarif_object(ctx: click.Context, snapshot: Snapshot) -> bool:
+    return _has_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["sarif"],
+        snapshot.global_id,
+    )
+
+
+def create_sarif_object(ctx: click.Context, snapshot: Snapshot, sarif: Path) -> None:
+    _create_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["sarif"],
+        snapshot.global_id,
+        sarif,
+    )
+
+
+def get_sarif_object(ctx: click.Context, snapshot: Snapshot, object_file: Path) -> None:
+    _get_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["sarif"],
+        snapshot.global_id,
+        object_file,
     )
