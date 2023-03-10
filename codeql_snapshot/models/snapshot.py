@@ -1,6 +1,7 @@
 from sqlalchemy import String, Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, validates
 from sqlalchemy.engine.default import DefaultExecutionContext
+from sqlalchemy import event
 from models.base import Base
 from enum import Enum
 from typing import Any

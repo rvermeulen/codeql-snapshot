@@ -19,10 +19,8 @@ def command(ctx: click.Context, format: str):
 
         if format == "table":
             table = BeautifulTable(maxwidth=get_terminal_size()[0])
-            table.columns.header = (
-                "Global Id, Source Id, Project Url,Branch,Commit,Language,State".split(
-                    ","
-                )
+            table.columns.header = "Global Id, Source Id, Project Url,Branch,Commit,Language,State,Created At,Updated At".split(
+                ","
             )
             table.columns.alignment = BeautifulTable.ALIGN_LEFT
             for snapshot in snapshots:
@@ -35,6 +33,8 @@ def command(ctx: click.Context, format: str):
                         snapshot.commit,
                         snapshot.language.name,
                         snapshot.state.name,
+                        snapshot.created_at.replace(microsecond=0).isoformat(),
+                        snapshot.updated_at.replace(microsecond=0).isoformat(),
                     ]
                 )
             click.echo(table)
@@ -49,6 +49,12 @@ def command(ctx: click.Context, format: str):
                     "commit": snapshot.commit,
                     "language": snapshot.language.name,
                     "state": snapshot.state.name,
+                    "created-at": snapshot.created_at.replace(
+                        microsecond=0
+                    ).isoformat(),
+                    "updated-at": snapshot.updated_at.replace(
+                        microsecond=0
+                    ).isoformat(),
                 }
 
             click.echo(json.dumps(list(map(snapshot_to_dict, snapshots)), indent=2))
