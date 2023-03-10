@@ -30,11 +30,18 @@ class CodeQL:
         database: Path,
         **kwargs: Tuple[str, str],
     ) -> None:
-        cp = self._exec(
+        arguments = [
             "database",
             "create",
             f"--language={language}",
             f"--source-root={source_root}",
+        ]
+
+        for key, value in kwargs.items():
+            arguments.append(f"--{key}={value}")
+
+        cp = self._exec(
+            *arguments,
             str(database),
         )
         if cp.returncode != 0:

@@ -1,5 +1,6 @@
 import click
-from sqlalchemy import Engine, select
+from sqlalchemy import select
+from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 from typing import Optional
 from models import Snapshot, SnapshotState
@@ -13,15 +14,25 @@ from helpers.codeql import CodeQL, CodeQLException
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from zipfile import ZipFile
+from subprocess import run
+import shlex
 
 
 @click.command(name="build")
 @click.option("-s", "--snapshot-global-id")
 @click.option("-c", "--command")
+@click.option("-x", "--exec")
 @click.pass_context
 def command(
-    ctx: click.Context, snapshot_global_id: Optional[str], command: Optional[str]
+    ctx: click.Context,
+    snapshot_global_id: Optional[str],
+    command: Optional[str],
+    exec: Optional[str],
 ):
+
+    if command and exec:
+        raise click.exceptions.UsageError("Cannot use both command and exec!")
+
     database_engine: Engine = ctx.obj["database"]["engine"]
 
     with Session(database_engine) as session:
@@ -53,7 +64,7 @@ def command(
 
                     get_source_object(ctx, snapshot, tmpzip)
 
-                    tmp_source_root = Path(tmpdir) / snapshot.global_id
+                    tmp_source_root: Path = Path(tmpdir) / snapshot.global_id
                     tmp_source_root.mkdir()
 
                     with ZipFile(str(tmpzip)) as zipfile:
@@ -64,9 +75,27 @@ def command(
                     )
                     codeql = CodeQL()
                     try:
-                        codeql.database_create(
-                            snapshot.language.value, tmp_source_root, database_path
-                        )
+                        if command:
+                            codeql.database_create(
+                                snapshot.language.value,
+                                tmp_source_root,
+                                database_path,
+                                command=command,
+                            )
+                        elif exec:
+                            args = shlex.split(exec) + [
+                                snapshot.language.value,
+                                str(tmp_source_root),
+                                str(database_path),
+                            ]
+
+                            cp = run(args)
+                            if cp.returncode != 0:
+                                raise CodeQLException("custom build execution failed!")
+                        else:
+                            codeql.database_create(
+                                snapshot.language.value, tmp_source_root, database_path
+                            )
 
                         bundle_path = codeql.database_bundle(database_path)
                         create_database_object(ctx, snapshot, bundle_path)

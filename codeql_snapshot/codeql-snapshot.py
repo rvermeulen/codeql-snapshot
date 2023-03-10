@@ -1,7 +1,7 @@
 import click
 from sqlalchemy import create_engine
 from minio import Minio
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Type
 from models import Base
 from pathlib import Path
 
