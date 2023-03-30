@@ -1,9 +1,18 @@
 import click
 from sqlalchemy import create_engine
 from minio import Minio
-from typing import Optional, List, Any, Type
-from models import Base
+from typing import Optional, List, Any
 from pathlib import Path
+
+# Add the parent directory to the path if this module is run directly (i.e. not imported)
+# This is necessary to support both the Poetry script invocation and the direct invocation.
+if not __package__ and __name__ == "__main__":
+    import sys
+
+    sys.path.append(str(Path(__file__).parent.parent))
+    __package__ = Path(__file__).parent.name
+
+from .models import Base
 
 commands_directory: Path = Path(__file__).parent / "commands"
 
@@ -53,7 +62,7 @@ class LazyMultiCommand(click.MultiCommand):
 @click.option("--storage-database-bucket", default="databases")
 @click.option("--storage-sarif-bucket", default="sarifs")
 @click.pass_context
-def cli(
+def main(
     ctx: click.Context,
     connection_string: str,
     storage_host: str,
@@ -92,4 +101,4 @@ def cli(
 
 
 if __name__ == "__main__":
-    cli(obj={}, auto_envvar_prefix="CODEQL_SNAPSHOT")
+    main(obj={}, auto_envvar_prefix="CODEQL_SNAPSHOT")

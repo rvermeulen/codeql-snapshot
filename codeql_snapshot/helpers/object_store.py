@@ -1,9 +1,9 @@
 import click
-from models import Snapshot
+from codeql_snapshot.models import Snapshot
 from pathlib import Path
 from minio import Minio
 from minio.error import S3Error
-from helpers.zip import zipdir
+from codeql_snapshot.helpers.zip import zipdir
 from tempfile import TemporaryDirectory
 
 

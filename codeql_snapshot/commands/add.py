@@ -6,9 +6,9 @@ from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 from minio import Minio
 from minio.error import S3Error
-from models import Snapshot, SnapshotState, SnaphotLanguage
-from helpers.zip import ZipError
-from helpers.object_store import has_source_object, create_source_object
+from codeql_snapshot.models import Snapshot, SnapshotState, SnaphotLanguage
+from codeql_snapshot.helpers.zip import ZipError
+from codeql_snapshot.helpers.object_store import has_source_object, create_source_object
 
 
 @click.command(name="add")

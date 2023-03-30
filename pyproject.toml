@@ -6,6 +6,9 @@ authors = ["Remco Vermeulen <rvermeulen@users.noreply.github.com>"]
 readme = "README.md"
 packages = [{include = "codeql_snapshot"}]
 
+[tool.poetry.scripts]
+codeql-snapshot = "codeql_snapshot.cli:main"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 pyyaml = "^6.0"

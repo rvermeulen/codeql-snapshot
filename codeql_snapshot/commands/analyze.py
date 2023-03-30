@@ -2,13 +2,13 @@ import click
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 from typing import Optional
-from helpers.codeql import CodeQL, CodeQLException
-from helpers.object_store import (
+from codeql_snapshot.helpers.codeql import CodeQL, CodeQLException
+from codeql_snapshot.helpers.object_store import (
     has_database_object,
     get_database_object,
     create_sarif_object,
 )
-from models.snapshot import Snapshot, SnapshotState
+from codeql_snapshot.models.snapshot import Snapshot, SnapshotState
 from tempfile import TemporaryDirectory
 from pathlib import Path
 

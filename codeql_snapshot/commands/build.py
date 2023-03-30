@@ -3,14 +3,14 @@ from sqlalchemy import select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 from typing import Optional
-from models import Snapshot, SnapshotState
-from helpers.object_store import (
+from codeql_snapshot.models import Snapshot, SnapshotState
+from codeql_snapshot.helpers.object_store import (
     has_source_object,
     get_source_object,
     create_database_object,
 )
-from helpers.zip import zipdir
-from helpers.codeql import CodeQL, CodeQLException
+from codeql_snapshot.helpers.zip import zipdir
+from codeql_snapshot.helpers.codeql import CodeQL, CodeQLException
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from zipfile import ZipFile

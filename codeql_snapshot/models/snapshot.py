@@ -1,11 +1,10 @@
 from sqlalchemy import String, Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, validates
 from sqlalchemy.engine.default import DefaultExecutionContext
-from sqlalchemy import event
-from models.base import Base
+from codeql_snapshot.models import Base
 from enum import Enum
 from typing import Any
-from helpers.hash import sha256_hexdigest
+from codeql_snapshot.helpers.hash import sha256_hexdigest
 
 
 class SnapshotState(Enum):

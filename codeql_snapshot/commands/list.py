@@ -1,7 +1,7 @@
 import click
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
-from models import Snapshot, SnapshotState
+from codeql_snapshot.models import Snapshot
 from beautifultable import BeautifulTable
 from shutil import get_terminal_size
 from typing import Dict
