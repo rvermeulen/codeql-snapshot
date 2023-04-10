@@ -6,7 +6,7 @@ from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 from minio import Minio
 from minio.error import S3Error
-from codeql_snapshot.models import Snapshot, SnapshotState, SnaphotLanguage
+from codeql_snapshot.models import Snapshot, SnapshotState, SnapshotLanguage
 from codeql_snapshot.helpers.zip import ZipError
 from codeql_snapshot.helpers.object_store import has_source_object, create_source_object
 
@@ -64,7 +64,7 @@ def command(
             .where(Snapshot.project_url == project_url)
             .where(Snapshot.branch == branch)
             .where(Snapshot.commit == commit)
-            .where(Snapshot.language == SnaphotLanguage[language.upper()])
+            .where(Snapshot.language == SnapshotLanguage[language.upper()])
         )
         existing_snapshot = session.scalar(stmt)
         if existing_snapshot:
@@ -116,7 +116,7 @@ def command(
                 project_url=project_url,
                 branch=branch,
                 commit=commit,
-                language=SnaphotLanguage[language.upper()],
+                language=SnapshotLanguage[language.upper()],
             )
             # Add and commit the new snapshot first so the global id is generated.
             session.add(new_snapshot)

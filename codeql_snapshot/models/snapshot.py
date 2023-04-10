@@ -18,7 +18,7 @@ class SnapshotState(Enum):
     ANALYZED = "ANALYZED"
 
 
-class SnaphotLanguage(Enum):
+class SnapshotLanguage(Enum):
     JAVA = "java"
     CPP = "cpp"
     JAVASCRIPT = "javascript"
@@ -53,8 +53,8 @@ class Snapshot(Base):
     project_url: Mapped[str] = mapped_column(String(2048), primary_key=True)
     branch: Mapped[str] = mapped_column(String(255), primary_key=True)
     commit: Mapped[str] = mapped_column(String(40), primary_key=True)
-    language: Mapped[SnaphotLanguage] = mapped_column(
-        SqlEnum(SnaphotLanguage), primary_key=True
+    language: Mapped[SnapshotLanguage] = mapped_column(
+        SqlEnum(SnapshotLanguage), primary_key=True
     )
     state: Mapped[SnapshotState] = mapped_column(
         SqlEnum(SnapshotState), default=SnapshotState.NOT_BUILT
