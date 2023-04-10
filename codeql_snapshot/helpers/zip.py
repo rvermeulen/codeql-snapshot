@@ -20,4 +20,7 @@ def zipdir(source_dir: Path, zip_path: Path):
     with zipfile.ZipFile(str(zip_path), mode="x") as fd:
         with click.progressbar([p for p in source_dir.glob("**/*")]) as files:
             for f in files:
-                fd.write(str(f), arcname=str(f.relative_to(source_dir)))
+                try:
+                    fd.write(str(f), arcname=str(f.relative_to(source_dir)))
+                except ValueError as e:
+                    raise ZipError(f"Failed to zip file {f} with error {e}")
