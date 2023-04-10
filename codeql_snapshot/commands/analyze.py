@@ -61,7 +61,6 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool) 
                         session.commit()
 
                         click.echo(f"Failed to create database with error {e}")
-                        input("Click to continue")
 
         else:
             click.echo("No snapshot requiring analysis!")
