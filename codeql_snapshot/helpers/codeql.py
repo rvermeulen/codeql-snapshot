@@ -2,7 +2,6 @@ import subprocess
 import json
 import semantic_version
 from pathlib import Path
-from typing import Tuple
 
 
 class CodeQLException(Exception):
@@ -28,7 +27,7 @@ class CodeQL:
         language: str,
         source_root: Path,
         database: Path,
-        **kwargs: Tuple[str, str],
+        **kwargs: str,
     ) -> None:
         arguments = [
             "database",
