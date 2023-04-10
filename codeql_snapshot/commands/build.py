@@ -35,7 +35,7 @@ def command(
 
     database_engine: Engine = ctx.obj["database"]["engine"]
 
-    with Session(database_engine) as session:
+    with Session(database_engine) as session, session.begin():
 
         if snapshot_global_id:
             stmt = (
@@ -55,8 +55,8 @@ def command(
 
         snapshot = session.scalar(stmt)
         if snapshot:
-            snapshot.state = SnapshotState.BUILD_IN_PROGRESS
-            session.commit()
+            with session.begin_nested():
+                snapshot.state = SnapshotState.BUILD_IN_PROGRESS
 
             if has_source_object(ctx, snapshot):
                 with TemporaryDirectory() as tmpdir:
@@ -100,7 +100,6 @@ def command(
                         bundle_path = codeql.database_bundle(database_path)
                         create_database_object(ctx, snapshot, bundle_path)
                         snapshot.state = SnapshotState.NOT_ANALYZED
-                        session.commit()
                     except CodeQLException as e:
                         if database_path.exists():
                             zipped_database_path = database_path.with_suffix(".zip")
@@ -108,12 +107,10 @@ def command(
                             create_database_object(ctx, snapshot, zipped_database_path)
 
                         snapshot.state = SnapshotState.BUILD_FAILED
-                        session.commit()
 
                         click.echo(f"Failed to create database with error {e}")
 
             else:
                 snapshot.state = SnapshotState.SNAPSHOT_FAILED
-                session.commit()
         else:
             click.echo("Could not find snapshot to build!")

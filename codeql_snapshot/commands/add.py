@@ -58,7 +58,7 @@ def command(
 
     database_engine: Engine = ctx.obj["database"]["engine"]
 
-    with Session(database_engine) as session:
+    with Session(database_engine) as session, session.begin():
         stmt = (
             select(Snapshot)
             .where(Snapshot.project_url == project_url)
@@ -119,8 +119,8 @@ def command(
                 language=SnapshotLanguage[language.upper()],
             )
             # Add and commit the new snapshot first so the global id is generated.
-            session.add(new_snapshot)
-            session.commit()
+            with session.begin_nested():
+                session.add(new_snapshot)
             try:
                 create_source_object(ctx, new_snapshot, source_root)
             except S3Error as err:
@@ -133,8 +133,6 @@ def command(
                     f"Failed to create source archive with error '{err}'! Adding snapshot with state {SnapshotState.SNAPSHOT_FAILED}"
                 )
                 new_snapshot.state = SnapshotState.SNAPSHOT_FAILED
-
-        session.commit()
 
 
 def resolve_project_url(source_root: Path):

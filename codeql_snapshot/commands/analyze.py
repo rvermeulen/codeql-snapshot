@@ -20,7 +20,7 @@ from pathlib import Path
 def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool) -> None:
     database_engine: Engine = ctx.obj["database"]["engine"]
 
-    with Session(database_engine) as session:
+    with Session(database_engine) as session, session.begin():
         stmt = select(Snapshot).with_for_update()
 
         if snapshot_global_id:
@@ -35,8 +35,8 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool) 
 
         snapshot = session.scalar(stmt)
         if snapshot:
-            snapshot.state = SnapshotState.ANALYSIS_IN_PROGRESS
-            session.commit()
+            with session.begin_nested():
+                snapshot.state = SnapshotState.ANALYSIS_IN_PROGRESS
 
             if has_database_object(ctx, snapshot):
                 with TemporaryDirectory() as tmpdir:
@@ -55,12 +55,8 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool) 
                         create_sarif_object(ctx, snapshot, sarif_path)
 
                         snapshot.state = SnapshotState.ANALYZED
-                        session.commit()
                     except CodeQLException as e:
                         snapshot.state = SnapshotState.ANALYSIS_FAILED
-                        session.commit()
-
                         click.echo(f"Failed to create database with error {e}")
-
         else:
             click.echo("No snapshot requiring analysis!")
