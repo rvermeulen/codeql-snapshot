@@ -24,7 +24,7 @@ class TimeStampMixin:
 
 
 @event.listens_for(TimeStampMixin, "before_update", propagate=True)
-def receive_before_update(mapper, connection, target):
+def receive_before_update(mapper: Any, connection: Any, target: TimeStampMixin):
     target.updated_at = datetime.utcnow()
 
 
