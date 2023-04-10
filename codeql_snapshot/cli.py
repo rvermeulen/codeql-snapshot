@@ -62,7 +62,7 @@ class LazyMultiCommand(click.MultiCommand):
 @click.option("--storage-database-bucket", default="databases")
 @click.option("--storage-sarif-bucket", default="sarifs")
 @click.pass_context
-def main(
+def multicommand(
     ctx: click.Context,
     connection_string: str,
     storage_host: str,
@@ -100,5 +100,9 @@ def main(
         storage_client.make_bucket(storage_sarif_bucket)
 
 
+def main() -> None:
+    multicommand(obj={}, auto_envvar_prefix="CODEQL_SNAPSHOT")
+
+
 if __name__ == "__main__":
-    main(obj={}, auto_envvar_prefix="CODEQL_SNAPSHOT")
+    main()
