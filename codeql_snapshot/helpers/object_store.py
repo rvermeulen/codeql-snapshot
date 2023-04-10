@@ -26,6 +26,10 @@ def _create_object(client: Minio, bucket: str, key: str, object_file: Path) -> N
     client.fput_object(bucket, key, str(object_file))
 
 
+def _remove_object(client: Minio, bucket: str, key: str) -> None:
+    client.remove_object(bucket, key)
+
+
 def has_source_object(ctx: click.Context, snapshot: Snapshot) -> bool:
     return _has_object(
         ctx.obj["storage"]["client"],
@@ -90,6 +94,14 @@ def get_database_object(
     )
 
 
+def remove_database_object(ctx: click.Context, snapshot: Snapshot) -> None:
+    _remove_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["database"],
+        snapshot.global_id,
+    )
+
+
 def has_sarif_object(ctx: click.Context, snapshot: Snapshot) -> bool:
     return _has_object(
         ctx.obj["storage"]["client"],
@@ -113,4 +125,12 @@ def get_sarif_object(ctx: click.Context, snapshot: Snapshot, object_file: Path) 
         ctx.obj["storage"]["buckets"]["sarif"],
         snapshot.global_id,
         object_file,
+    )
+
+
+def remove_sarif_object(ctx: click.Context, snapshot: Snapshot) -> None:
+    _remove_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["sarif"],
+        snapshot.global_id,
     )
