@@ -1,8 +1,9 @@
 import click
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from minio import Minio
 from typing import Optional, List, Any
 from pathlib import Path
+from codeql_snapshot.models import Base
 
 # Add the parent directory to the path if this module is run directly (i.e. not imported)
 # This is necessary to support both the Poetry script invocation and the direct invocation.
@@ -11,8 +12,6 @@ if not __package__ and __name__ == "__main__":
 
     sys.path.append(str(Path(__file__).parent.parent))
     __package__ = Path(__file__).parent.name
-
-from .models import Base
 
 commands_directory: Path = Path(__file__).parent / "commands"
 
@@ -89,15 +88,29 @@ def multicommand(
             "sarif": storage_sarif_bucket,
         },
     }
-    # Initialize database
-    Base.metadata.create_all(ctx.obj["database"]["engine"])
-    # Initialize buckets
-    if not storage_client.bucket_exists(storage_source_bucket):
-        storage_client.make_bucket(storage_source_bucket)
-    if not storage_client.bucket_exists(storage_database_bucket):
-        storage_client.make_bucket(storage_database_bucket)
-    if not storage_client.bucket_exists(storage_sarif_bucket):
-        storage_client.make_bucket(storage_sarif_bucket)
+
+    if ctx.invoked_subcommand != "init":
+        # Check if database is initialized
+        with ctx.obj["database"]["engine"].connect() as connection:
+            for table in Base.metadata.tables:
+                try:
+                    connection.execute(text(f"SELECT * FROM {table} LIMIT 1"))
+                except:
+                    click.echo(
+                        "Database not initialized. Run `codeql-snapshot init` first."
+                    )
+                    exit(1)
+
+        # Initialize buckets
+        if (
+            not storage_client.bucket_exists(storage_source_bucket)
+            or not storage_client.bucket_exists(storage_database_bucket)
+            or not storage_client.bucket_exists(storage_sarif_bucket)
+        ):
+            click.echo(
+                "Object store not initialized. Run `codeql-snapshot init` first."
+            )
+            exit(1)
 
 
 def main() -> None:
