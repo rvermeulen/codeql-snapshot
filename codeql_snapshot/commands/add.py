@@ -126,7 +126,8 @@ def command(
             with session.begin_nested():
                 session.add(new_snapshot)
             try:
-                create_source_object(ctx, new_snapshot.source_id, source_root)
+                if not has_source_object(ctx, new_snapshot.source_id):
+                    create_source_object(ctx, new_snapshot.source_id, source_root)
             except S3Error as err:
                 click.echo(
                     f"Failed to create source object with error '{err}'! Adding snapshot with state {SnapshotState.SNAPSHOT_FAILED}"
