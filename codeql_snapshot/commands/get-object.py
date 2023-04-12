@@ -6,6 +6,8 @@ from codeql_snapshot.helpers.object_store import (
     get_database_object,
     has_sarif_object,
     get_sarif_object,
+    has_source_object,
+    get_source_object,
 )
 from codeql_snapshot.models.snapshot import Snapshot
 from pathlib import Path
@@ -18,7 +20,7 @@ from pathlib import Path
     "--object-type",
     required=True,
     type=click.Choice(
-        ["database", "sarif"],
+        ["database", "sarif", "source"],
         case_sensitive=False,
     ),
 )
@@ -66,5 +68,19 @@ def command(
                     )
                 else:
                     click.echo(f"No sarif for snapshot with id {snapshot_global_id}!")
+
+            if object_type == "source":
+                source_path = (directory / snapshot.source_id).with_suffix(".zip")
+                if source_path.exists():
+                    click.echo(f"Source already exists at {source_path}!")
+                    return
+                if has_source_object(ctx, snapshot.source_id):
+                    get_source_object(
+                        ctx,
+                        snapshot.source_id,
+                        source_path,
+                    )
+                else:
+                    click.echo(f"No source for snapshot with id {snapshot_global_id}!")
         else:
             click.echo(f"No snapshot with id {snapshot_global_id}!")
