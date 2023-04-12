@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, text
 from minio import Minio
 from typing import Optional, List, Any
 from pathlib import Path
-from codeql_snapshot.models import Base
 
 # Add the parent directory to the path if this module is run directly (i.e. not imported)
 # This is necessary to support both the Poetry script invocation and the direct invocation.
@@ -12,6 +11,8 @@ if not __package__ and __name__ == "__main__":
 
     sys.path.append(str(Path(__file__).parent.parent))
     __package__ = Path(__file__).parent.name
+
+from codeql_snapshot.models import Base
 
 commands_directory: Path = Path(__file__).parent / "commands"
 
