@@ -98,12 +98,12 @@ def command(
                         )
                     except S3Error as err:
                         click.echo(
-                            f"Failed to create source object! Adding snapshot with state {SnapshotState.SNAPSHOT_FAILED}"
+                            f"Failed to create source object with error {err}! Adding snapshot with state {SnapshotState.SNAPSHOT_FAILED}"
                         )
                         existing_snapshot.state = SnapshotState.SNAPSHOT_FAILED
                     except ZipError as err:
                         click.echo(
-                            f"Failed to create source archive! Adding snapshot with state {SnapshotState.SNAPSHOT_FAILED}"
+                            f"Failed to create source archive with error {err}! Adding snapshot with state {SnapshotState.SNAPSHOT_FAILED}"
                         )
                     existing_snapshot.state = SnapshotState.SNAPSHOT_FAILED
             elif existing_snapshot.state == SnapshotState.SNAPSHOT_FAILED:
