@@ -21,12 +21,14 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool) 
     database_engine: Engine = ctx.obj["database"]["engine"]
 
     with Session(database_engine) as session, session.begin():
-        stmt = select(Snapshot).with_for_update()
+        stmt = select(Snapshot)
 
         if snapshot_global_id:
-            stmt = stmt.where(Snapshot.global_id == snapshot_global_id)
+            stmt = stmt.where(
+                Snapshot.global_id == snapshot_global_id
+            ).with_for_update()
         else:
-            stmt = stmt.limit(1)
+            stmt = stmt.limit(1).with_for_update(skip_locked=True)
 
         if retry:
             stmt = stmt.where(Snapshot.state == SnapshotState.ANALYSIS_FAILED)

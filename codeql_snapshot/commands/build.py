@@ -37,20 +37,20 @@ def command(
 
     with Session(database_engine) as session, session.begin():
 
+        stmt = select(Snapshot)
+
         if snapshot_global_id:
             stmt = (
-                select(Snapshot)
-                .where(Snapshot.global_id == snapshot_global_id)
+                stmt.where(Snapshot.global_id == snapshot_global_id)
                 .where(Snapshot.state == SnapshotState.NOT_BUILT)
                 .with_for_update()
             )
 
         else:
             stmt = (
-                select(Snapshot)
-                .where(Snapshot.state == SnapshotState.NOT_BUILT)
+                stmt.where(Snapshot.state == SnapshotState.NOT_BUILT)
                 .limit(1)
-                .with_for_update()
+                .with_for_update(skip_locked=True)
             )
 
         snapshot = session.scalar(stmt)
