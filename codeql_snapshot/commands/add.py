@@ -74,7 +74,7 @@ def command(
                 )
                 existing_snapshot.state = SnapshotState.NOT_BUILT
             elif existing_snapshot.state == SnapshotState.ANALYSIS_FAILED:
-                if has_source_object(ctx, existing_snapshot):
+                if has_source_object(ctx, existing_snapshot.source_id):
                     click.echo(
                         f"Snapshot in state {existing_snapshot.state.name} and has a source object. Resetting state to {SnapshotState.NOT_ANALYZED.name} to retry."
                     )
@@ -85,13 +85,17 @@ def command(
                     )
                     existing_snapshot.state = SnapshotState.NOT_BUILT
             elif existing_snapshot.state == SnapshotState.NOT_BUILT:
-                if not has_source_object(ctx, existing_snapshot):
+                if not has_source_object(ctx, existing_snapshot.source_id):
                     click.echo(
                         f"Snapshot exist in state {SnapshotState.NOT_BUILT.name}, but is missing a source object. Retrying to add source object."
                     )
 
                     try:
-                        create_source_object(ctx, existing_snapshot, source_root)
+                        create_source_object(
+                            ctx,
+                            existing_snapshot.source_id,
+                            source_root,
+                        )
                     except S3Error as err:
                         click.echo(
                             f"Failed to create source object! Adding snapshot with state {SnapshotState.SNAPSHOT_FAILED}"
@@ -122,7 +126,7 @@ def command(
             with session.begin_nested():
                 session.add(new_snapshot)
             try:
-                create_source_object(ctx, new_snapshot, source_root)
+                create_source_object(ctx, new_snapshot.source_id, source_root)
             except S3Error as err:
                 click.echo(
                     f"Failed to create source object with error '{err}'! Adding snapshot with state {SnapshotState.SNAPSHOT_FAILED}"

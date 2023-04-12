@@ -38,14 +38,14 @@ def command(
         if snapshot:
 
             if object_type == "database":
-                if has_database_object(ctx, snapshot):
+                if has_database_object(ctx, snapshot.global_id):
                     database_path = (directory / snapshot.global_id).with_suffix(".zip")
                     if database_path.exists():
                         click.echo(f"Database already exists at {database_path}!")
                         return
                     get_database_object(
                         ctx,
-                        snapshot,
+                        snapshot.global_id,
                         database_path,
                     )
                 else:
@@ -58,10 +58,10 @@ def command(
                 if sarif_path.exists():
                     click.echo(f"Sarif already exists at {sarif_path}!")
                     return
-                if has_sarif_object(ctx, snapshot):
+                if has_sarif_object(ctx, snapshot.global_id):
                     get_sarif_object(
                         ctx,
-                        snapshot,
+                        snapshot.global_id,
                         sarif_path,
                     )
                 else:

@@ -35,6 +35,9 @@ def command(
 
     database_engine: Engine = ctx.obj["database"]["engine"]
 
+    global_id: Optional[str] = None
+    source_id: Optional[str] = None
+    language: Optional[str] = None
     with Session(database_engine) as session, session.begin():
 
         stmt = select(Snapshot)
@@ -55,62 +58,78 @@ def command(
 
         snapshot = session.scalar(stmt)
         if snapshot:
-            with session.begin_nested():
-                snapshot.state = SnapshotState.BUILD_IN_PROGRESS
+            snapshot.state = SnapshotState.BUILD_IN_PROGRESS
 
-            if has_source_object(ctx, snapshot):
-                with TemporaryDirectory() as tmpdir:
-                    tmpzip = (Path(tmpdir) / snapshot.global_id).with_suffix(".zip")
+            global_id = snapshot.global_id
+            source_id = snapshot.source_id
+            language = snapshot.language.value
 
-                    get_source_object(ctx, snapshot, tmpzip)
+    if global_id and source_id and language:
+        if has_source_object(ctx, source_id):
+            with TemporaryDirectory() as tmpdir:
+                tmpzip = (Path(tmpdir) / source_id).with_suffix(".zip")
 
-                    tmp_source_root: Path = Path(tmpdir) / snapshot.global_id
-                    tmp_source_root.mkdir()
+                get_source_object(ctx, source_id, tmpzip)
 
-                    with ZipFile(str(tmpzip)) as zipfile:
-                        zipfile.extractall(tmp_source_root)
+                tmp_source_root: Path = Path(tmpdir) / source_id
+                tmp_source_root.mkdir()
 
-                    database_path = Path(
-                        tmpdir, f"{snapshot.global_id}-{snapshot.language.value}-db"
-                    )
-                    codeql = CodeQL()
-                    try:
-                        if command:
-                            codeql.database_create(
-                                snapshot.language.value,
-                                tmp_source_root,
-                                database_path,
-                                command=command,
-                            )
-                        elif exec:
-                            args = shlex.split(exec) + [
-                                snapshot.language.value,
-                                str(tmp_source_root),
-                                str(database_path),
-                            ]
+                with ZipFile(str(tmpzip)) as zipfile:
+                    zipfile.extractall(tmp_source_root)
 
-                            cp = run(args)
-                            if cp.returncode != 0:
-                                raise CodeQLException("custom build execution failed!")
-                        else:
-                            codeql.database_create(
-                                snapshot.language.value, tmp_source_root, database_path
-                            )
+                database_path = Path(tmpdir, f"{global_id}-db")
+                codeql = CodeQL()
+                try:
+                    if command:
+                        codeql.database_create(
+                            language,
+                            tmp_source_root,
+                            database_path,
+                            command=command,
+                        )
+                    elif exec:
+                        args = shlex.split(exec) + [
+                            language,
+                            str(tmp_source_root),
+                            str(database_path),
+                        ]
 
-                        bundle_path = codeql.database_bundle(database_path)
-                        create_database_object(ctx, snapshot, bundle_path)
-                        snapshot.state = SnapshotState.NOT_ANALYZED
-                    except CodeQLException as e:
-                        if database_path.exists():
-                            zipped_database_path = database_path.with_suffix(".zip")
-                            zipdir(database_path, zipped_database_path)
-                            create_database_object(ctx, snapshot, zipped_database_path)
+                        cp = run(args)
+                        if cp.returncode != 0:
+                            raise CodeQLException("custom build execution failed!")
+                    else:
+                        codeql.database_create(language, tmp_source_root, database_path)
 
-                        snapshot.state = SnapshotState.BUILD_FAILED
+                    bundle_path = codeql.database_bundle(database_path)
+                    create_database_object(ctx, global_id, bundle_path)
+                    newstate = SnapshotState.NOT_ANALYZED
+                except CodeQLException as e:
+                    if database_path.exists():
+                        zipped_database_path = database_path.with_suffix(".zip")
+                        zipdir(database_path, zipped_database_path)
+                        create_database_object(ctx, global_id, zipped_database_path)
 
-                        click.echo(f"Failed to create database with error {e}")
+                    newstate = SnapshotState.BUILD_FAILED
 
-            else:
-                snapshot.state = SnapshotState.SNAPSHOT_FAILED
+                    click.echo(f"Failed to create database with error {e}")
+
         else:
-            click.echo("Could not find snapshot to build!")
+            newstate = SnapshotState.SNAPSHOT_FAILED
+
+        with Session(database_engine) as session, session.begin():
+
+            stmt = (
+                select(Snapshot)
+                .where(Snapshot.global_id == global_id)
+                .with_for_update()
+            )
+
+            snapshot = session.scalar(stmt)
+            if snapshot:
+                snapshot.state = newstate
+            else:
+                click.echo(
+                    f"Could not find snapshot to update state from {SnapshotState.BUILD_IN_PROGRESS} to {newstate}!"
+                )
+    else:
+        click.echo("Could not find snapshot to build!")

@@ -30,107 +30,121 @@ def _remove_object(client: Minio, bucket: str, key: str) -> None:
     client.remove_object(bucket, key)
 
 
-def has_source_object(ctx: click.Context, snapshot: Snapshot) -> bool:
+def has_source_object(ctx: click.Context, snapshot_source_id: str) -> bool:
     return _has_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["source"],
-        snapshot.source_id,
+        snapshot_source_id,
     )
 
 
 def create_source_object(
-    ctx: click.Context, snapshot: Snapshot, source_root: Path
+    ctx: click.Context,
+    snapshot_source_id: str,
+    source_root: Path,
 ) -> None:
     with TemporaryDirectory() as tmpdir:
-        tmpzip = (Path(tmpdir) / snapshot.global_id).with_suffix(".zip")
+        tmpzip = (Path(tmpdir) / snapshot_source_id).with_suffix(".zip")
         zipdir(source_root, tmpzip)
 
         _create_object(
             ctx.obj["storage"]["client"],
             ctx.obj["storage"]["buckets"]["source"],
-            snapshot.source_id,
+            snapshot_source_id,
             tmpzip,
         )
 
 
 def get_source_object(
-    ctx: click.Context, snapshot: Snapshot, object_file: Path
+    ctx: click.Context, snapshot_source_id: str, object_file: Path
 ) -> None:
     _get_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["source"],
-        snapshot.source_id,
+        snapshot_source_id,
         object_file,
     )
 
 
-def has_database_object(ctx: click.Context, snapshot: Snapshot) -> bool:
+def remove_source_object(ctx: click.Context, snapshot_source_id: str) -> None:
+    _remove_object(
+        ctx.obj["storage"]["client"],
+        ctx.obj["storage"]["buckets"]["source"],
+        snapshot_source_id,
+    )
+
+
+def has_database_object(ctx: click.Context, snapshot_global_id: str) -> bool:
     return _has_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["database"],
-        snapshot.global_id,
+        snapshot_global_id,
     )
 
 
 def create_database_object(
-    ctx: click.Context, snapshot: Snapshot, database_bundle: Path
+    ctx: click.Context, snapshot_global_id: str, database_bundle: Path
 ) -> None:
     _create_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["database"],
-        snapshot.global_id,
+        snapshot_global_id,
         database_bundle,
     )
 
 
 def get_database_object(
-    ctx: click.Context, snapshot: Snapshot, object_file: Path
+    ctx: click.Context, snapshot_global_id: str, object_file: Path
 ) -> None:
     _get_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["database"],
-        snapshot.global_id,
+        snapshot_global_id,
         object_file,
     )
 
 
-def remove_database_object(ctx: click.Context, snapshot: Snapshot) -> None:
+def remove_database_object(ctx: click.Context, snapshot_global_id: str) -> None:
     _remove_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["database"],
-        snapshot.global_id,
+        snapshot_global_id,
     )
 
 
-def has_sarif_object(ctx: click.Context, snapshot: Snapshot) -> bool:
+def has_sarif_object(ctx: click.Context, snapshot_global_id: str) -> bool:
     return _has_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["sarif"],
-        snapshot.global_id,
+        snapshot_global_id,
     )
 
 
-def create_sarif_object(ctx: click.Context, snapshot: Snapshot, sarif: Path) -> None:
+def create_sarif_object(
+    ctx: click.Context, snapshot_global_id: str, sarif: Path
+) -> None:
     _create_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["sarif"],
-        snapshot.global_id,
+        snapshot_global_id,
         sarif,
     )
 
 
-def get_sarif_object(ctx: click.Context, snapshot: Snapshot, object_file: Path) -> None:
+def get_sarif_object(
+    ctx: click.Context, snapshot_global_id: str, object_file: Path
+) -> None:
     _get_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["sarif"],
-        snapshot.global_id,
+        snapshot_global_id,
         object_file,
     )
 
 
-def remove_sarif_object(ctx: click.Context, snapshot: Snapshot) -> None:
+def remove_sarif_object(ctx: click.Context, snapshot_global_id: str) -> None:
     _remove_object(
         ctx.obj["storage"]["client"],
         ctx.obj["storage"]["buckets"]["sarif"],
-        snapshot.global_id,
+        snapshot_global_id,
     )

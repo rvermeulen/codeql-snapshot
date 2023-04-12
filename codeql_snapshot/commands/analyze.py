@@ -20,6 +20,7 @@ from pathlib import Path
 def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool) -> None:
     database_engine: Engine = ctx.obj["database"]["engine"]
 
+    global_id: Optional[str] = None
     with Session(database_engine) as session, session.begin():
         stmt = select(Snapshot)
 
@@ -37,28 +38,42 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool) 
 
         snapshot = session.scalar(stmt)
         if snapshot:
-            with session.begin_nested():
-                snapshot.state = SnapshotState.ANALYSIS_IN_PROGRESS
+            snapshot.state = SnapshotState.ANALYSIS_IN_PROGRESS
+            global_id = snapshot.global_id
 
-            if has_database_object(ctx, snapshot):
-                with TemporaryDirectory() as tmpdir:
-                    tmpzip = (Path(tmpdir) / snapshot.global_id).with_suffix(".zip")
+    if global_id:
+        if has_database_object(ctx, global_id):
+            with TemporaryDirectory() as tmpdir:
+                tmpzip = (Path(tmpdir) / global_id).with_suffix(".zip")
 
-                    get_database_object(ctx, snapshot, tmpzip)
+                get_database_object(ctx, global_id, tmpzip)
 
-                    try:
-                        codeql = CodeQL()
+                try:
+                    codeql = CodeQL()
 
-                        codeql.database_unbundle(tmpzip)
-                        database_path = tmpzip.with_suffix("")
-                        sarif_path = database_path.with_suffix(".sarif")
+                    codeql.database_unbundle(tmpzip)
+                    database_path = tmpzip.with_suffix("")
+                    sarif_path = database_path.with_suffix(".sarif")
 
-                        codeql.database_analyze(database_path, sarif_path)
-                        create_sarif_object(ctx, snapshot, sarif_path)
+                    codeql.database_analyze(database_path, sarif_path)
+                    create_sarif_object(ctx, global_id, sarif_path)
 
-                        snapshot.state = SnapshotState.ANALYZED
-                    except CodeQLException as e:
-                        snapshot.state = SnapshotState.ANALYSIS_FAILED
-                        click.echo(f"Failed to create database with error {e}")
-        else:
-            click.echo("No snapshot requiring analysis!")
+                    newstate = SnapshotState.ANALYZED
+                except CodeQLException as e:
+                    newstate = SnapshotState.ANALYSIS_FAILED
+                    click.echo(f"Failed to create database with error {e}")
+            with Session(database_engine) as session, session.begin():
+                stmt = (
+                    select(Snapshot)
+                    .where(Snapshot.global_id == global_id)
+                    .with_for_update()
+                )
+                snapshot = session.scalar(stmt)
+                if snapshot:
+                    snapshot.state = newstate
+                else:
+                    click.echo(
+                        f"Could not find snapshot to update state from {SnapshotState.ANALYSIS_IN_PROGRESS} to {newstate}!"
+                    )
+    else:
+        click.echo("No snapshot requiring analysis!")

@@ -26,10 +26,10 @@ def command(ctx: click.Context, snapshot_global_id: str) -> None:
         snapshot = session.scalar(stmt)
         if snapshot:
 
-            if has_database_object(ctx, snapshot):
-                remove_database_object(ctx, snapshot)
-            if has_sarif_object(ctx, snapshot):
-                remove_sarif_object(ctx, snapshot)
+            if has_database_object(ctx, snapshot.global_id):
+                remove_database_object(ctx, snapshot.global_id)
+            if has_sarif_object(ctx, snapshot.global_id):
+                remove_sarif_object(ctx, snapshot.global_id)
 
             session.delete(snapshot)
 
