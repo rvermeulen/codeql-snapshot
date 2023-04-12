@@ -1,11 +1,13 @@
 import click
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, select, func
 from sqlalchemy.orm import Session
 from codeql_snapshot.helpers.object_store import (
     has_database_object,
     remove_database_object,
     has_sarif_object,
     remove_sarif_object,
+    has_source_object,
+    remove_source_object,
 )
 from codeql_snapshot.models.snapshot import Snapshot
 
@@ -26,6 +28,16 @@ def command(ctx: click.Context, snapshot_global_id: str) -> None:
         snapshot = session.scalar(stmt)
         if snapshot:
 
+            with session.begin_nested():
+                references = session.scalar(
+                    select(func.count())
+                    .select_from(Snapshot)
+                    .where(Snapshot.source_id == snapshot.source_id)
+                    .where(Snapshot.global_id != snapshot.global_id)
+                )
+                if references and references == 0:
+                    if has_source_object(ctx, snapshot.source_id):
+                        remove_source_object(ctx, snapshot.source_id)
             if has_database_object(ctx, snapshot.global_id):
                 remove_database_object(ctx, snapshot.global_id)
             if has_sarif_object(ctx, snapshot.global_id):
