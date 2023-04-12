@@ -35,7 +35,7 @@ def command(ctx: click.Context, snapshot_global_id: str) -> None:
                     .where(Snapshot.source_id == snapshot.source_id)
                     .where(Snapshot.global_id != snapshot.global_id)
                 )
-                if references and references == 0:
+                if references == 0:
                     if has_source_object(ctx, snapshot.source_id):
                         remove_source_object(ctx, snapshot.source_id)
             if has_database_object(ctx, snapshot.global_id):
