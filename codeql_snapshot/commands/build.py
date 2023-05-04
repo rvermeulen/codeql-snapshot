@@ -94,9 +94,14 @@ def command(
                             str(database_path),
                         ]
 
-                        cp = run(args)
-                        if cp.returncode != 0:
-                            raise CodeQLException("custom build execution failed!")
+                        try:
+                            cp = run(args)
+                            if cp.returncode != 0:
+                                raise CodeQLException("custom build execution failed!")
+                        except OSError as e:
+                            raise CodeQLException(
+                                f"Failed to execute custom build command with error: {e.strerror}!"
+                            )
                     else:
                         codeql.database_create(language, tmp_source_root, database_path)
 

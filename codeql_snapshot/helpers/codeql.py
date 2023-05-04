@@ -10,9 +10,16 @@ class CodeQLException(Exception):
 
 class CodeQL:
     def _exec(self, command: str, *args: str) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            ["codeql", command] + [arg for arg in args], capture_output=True, text=True
-        )
+        try:
+            return subprocess.run(
+                ["codeql", command] + [arg for arg in args],
+                capture_output=True,
+                text=True,
+            )
+        except OSError as e:
+            raise CodeQLException(
+                f"Failed to execute codeql command with error: {e.strerror}!"
+            )
 
     def version(self) -> semantic_version.Version:
         cp = self._exec("version", "--format=json")
