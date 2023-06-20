@@ -18,6 +18,7 @@ minio = "^7.1.12"
 psycopg2-binary = "^2.9.5"
 beautifultable = "^1.1.0"
 semantic-version = "^2.10.0"
+alembic = "^1.11.1"
 
 
 [tool.poetry.group.dev.dependencies]
