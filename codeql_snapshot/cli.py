@@ -14,6 +14,7 @@ if not __package__ and __name__ == "__main__":
 
 from codeql_snapshot.models import Base
 
+root_directory: Path = Path(__file__).parent
 commands_directory: Path = Path(__file__).parent / "commands"
 
 
@@ -115,7 +116,7 @@ def multicommand(
 
 
 def main() -> None:
-    multicommand(obj={}, auto_envvar_prefix="CODEQL_SNAPSHOT")
+    multicommand(obj={"root_directory": root_directory}, auto_envvar_prefix="CODEQL_SNAPSHOT")
 
 
 if __name__ == "__main__":
