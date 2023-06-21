@@ -1,5 +1,6 @@
 import click
-from codeql_snapshot.models import Base
+from alembic.config import Config
+from alembic.command import upgrade
 
 
 @click.command(name="init")
@@ -7,9 +8,13 @@ from codeql_snapshot.models import Base
 def command(
     ctx: click.Context,
 ):
-
+    alembic_config_path = (ctx.obj['root_directory'].parent / "alembic.ini").absolute()
+    if not alembic_config_path.exists():
+        raise click.ClickException(f"Cannot find Alembic config file at {alembic_config_path}!")
+    
+    alembic_config = Config(alembic_config_path)
     # Initialize database
-    Base.metadata.create_all(ctx.obj["database"]["engine"])
+    upgrade(alembic_config, "head")
 
     storage_client = ctx.obj["storage"]["client"]
     # Initialize buckets
