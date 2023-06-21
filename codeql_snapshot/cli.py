@@ -123,6 +123,5 @@ def multicommand(
 def main() -> None:
     multicommand(obj={"root_directory": root_directory}, auto_envvar_prefix="CODEQL_SNAPSHOT")
 
-
 if __name__ == "__main__":
     main()
