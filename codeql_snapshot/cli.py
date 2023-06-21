@@ -92,7 +92,7 @@ def multicommand(
     }
 
     if ctx.invoked_subcommand != "init":
-        alembic_config_path = (root_directory.parent / "alembic.ini").absolute()
+        alembic_config_path = (root_directory / "alembic.ini").absolute()
         if not alembic_config_path.exists():
             raise click.ClickException(
                 f"Cannot find Alembic config file at {alembic_config_path}!"
