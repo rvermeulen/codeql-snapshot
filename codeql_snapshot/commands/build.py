@@ -22,12 +22,14 @@ import shlex
 @click.option("-s", "--snapshot-global-id")
 @click.option("-c", "--command")
 @click.option("-x", "--exec")
+@click.option("-r", "--retry", is_flag=True)
 @click.pass_context
 def command(
     ctx: click.Context,
     snapshot_global_id: Optional[str],
     command: Optional[str],
     exec: Optional[str],
+    retry: bool,
 ):
 
     if command and exec:
@@ -43,18 +45,16 @@ def command(
         stmt = select(Snapshot)
 
         if snapshot_global_id:
-            stmt = (
-                stmt.where(Snapshot.global_id == snapshot_global_id)
-                .where(Snapshot.state == SnapshotState.NOT_BUILT)
-                .with_for_update()
-            )
-
+            stmt = stmt.where(
+                Snapshot.global_id == snapshot_global_id
+            ).with_for_update()
         else:
-            stmt = (
-                stmt.where(Snapshot.state == SnapshotState.NOT_BUILT)
-                .limit(1)
-                .with_for_update(skip_locked=True)
-            )
+            stmt = stmt.limit(1).with_for_update(skip_locked=True)
+
+        if retry:
+            stmt = stmt.where(Snapshot.state == SnapshotState.BUILD_FAILED)
+        else:
+            stmt = stmt.where(Snapshot.state == SnapshotState.NOT_BUILT)
 
         snapshot = session.scalar(stmt)
         if snapshot:
@@ -94,9 +94,14 @@ def command(
                             str(database_path),
                         ]
 
-                        cp = run(args)
-                        if cp.returncode != 0:
-                            raise CodeQLException("custom build execution failed!")
+                        try:
+                            cp = run(args)
+                            if cp.returncode != 0:
+                                raise CodeQLException("custom build execution failed!")
+                        except OSError as e:
+                            raise CodeQLException(
+                                f"Failed to execute custom build command with error: {e.strerror}!"
+                            )
                     else:
                         codeql.database_create(language, tmp_source_root, database_path)
 

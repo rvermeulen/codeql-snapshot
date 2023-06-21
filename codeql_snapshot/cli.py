@@ -3,6 +3,8 @@ from sqlalchemy import create_engine, text
 from minio import Minio
 from typing import Optional, List, Any
 from pathlib import Path
+from alembic import config, script
+from alembic.runtime import migration
 
 # Add the parent directory to the path if this module is run directly (i.e. not imported)
 # This is necessary to support both the Poetry script invocation and the direct invocation.
@@ -12,8 +14,7 @@ if not __package__ and __name__ == "__main__":
     sys.path.append(str(Path(__file__).parent.parent))
     __package__ = Path(__file__).parent.name
 
-from codeql_snapshot.models import Base
-
+root_directory: Path = Path(__file__).parent
 commands_directory: Path = Path(__file__).parent / "commands"
 
 
@@ -91,14 +92,19 @@ def multicommand(
     }
 
     if ctx.invoked_subcommand != "init":
+        alembic_config_path = (root_directory / "alembic.ini").absolute()
+        if not alembic_config_path.exists():
+            raise click.ClickException(
+                f"Cannot find Alembic config file at {alembic_config_path}!"
+            )
+        alembic_config = config.Config(alembic_config_path)
+        alembic_script_dir = script.ScriptDirectory.from_config(alembic_config)
         # Check if database is initialized
         with ctx.obj["database"]["engine"].connect() as connection:
-            for table in Base.metadata.tables:
-                try:
-                    connection.execute(text(f"SELECT * FROM {table} LIMIT 1"))
-                except:
+            context = migration.MigrationContext.configure(connection)
+            if set(context.get_current_heads()) != set(alembic_script_dir.get_heads()):
                     click.echo(
-                        "Database not initialized. Run `codeql-snapshot init` first."
+                        "Database schema is not up-to-date. Run `codeql-snapshot init` first."
                     )
                     exit(1)
 
@@ -115,8 +121,7 @@ def multicommand(
 
 
 def main() -> None:
-    multicommand(obj={}, auto_envvar_prefix="CODEQL_SNAPSHOT")
-
+    multicommand(obj={"root_directory": root_directory}, auto_envvar_prefix="CODEQL_SNAPSHOT")
 
 if __name__ == "__main__":
     main()

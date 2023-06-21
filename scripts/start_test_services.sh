@@ -42,7 +42,7 @@ docker-compose -f "$SCRIPT_DIR/docker-compose.yml" exec object-storage  /opt/bin
 # Add user
 docker-compose -f "$SCRIPT_DIR/docker-compose.yml" exec object-storage /opt/bin/mc admin user add codeql-snapshot $minio_access_key $minio_secret_key
 # Apply read/write policy to added user
-docker-compose -f "$SCRIPT_DIR/docker-compose.yml" exec object-storage /opt/bin/mc admin policy set codeql-snapshot readwrite user=$minio_access_key
+docker-compose -f "$SCRIPT_DIR/docker-compose.yml" exec object-storage /opt/bin/mc admin policy attach codeql-snapshot readwrite --user $minio_access_key
 
 echo "export CODEQL_SNAPSHOT_STORAGE_HOST=127.0.0.1:9000" > "$SCRIPT_DIR/codeql-snapshot.env"
 echo "export CODEQL_SNAPSHOT_STORAGE_ACCESS_KEY=$minio_access_key" >> "$SCRIPT_DIR/codeql-snapshot.env"
