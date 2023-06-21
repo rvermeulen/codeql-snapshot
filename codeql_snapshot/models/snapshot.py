@@ -1,9 +1,9 @@
-from sqlalchemy import String, Enum as SqlEnum
-from sqlalchemy.orm import Mapped, mapped_column, validates
+from sqlalchemy import String, Enum as SqlEnum, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
 from sqlalchemy.engine.default import DefaultExecutionContext
 from codeql_snapshot.models import Base
 from enum import Enum
-from typing import Any
+from typing import Any, List
 from codeql_snapshot.helpers.hash import sha256_hexdigest
 
 
@@ -47,7 +47,7 @@ def get_source_id(context: DefaultExecutionContext) -> str:
 class Snapshot(Base):
     __tablename__ = "snapshots"
 
-    global_id: Mapped[str] = mapped_column(default=get_global_id, init=False)
+    global_id: Mapped[str] = mapped_column(default=get_global_id, init=False, unique=True)
     source_id: Mapped[str] = mapped_column(default=get_source_id, init=False)
     # https://support.microsoft.com/en-us/topic/maximum-url-length-is-2-083-characters-in-internet-explorer-174e7c8a-6666-f4e0-6fd6-908b53c12246
     project_url: Mapped[str] = mapped_column(String(2048), primary_key=True)
@@ -56,6 +56,7 @@ class Snapshot(Base):
     language: Mapped[SnapshotLanguage] = mapped_column(
         SqlEnum(SnapshotLanguage), primary_key=True
     )
+    labels: Mapped[List["SnapshotLabel"]] = relationship(back_populates="snapshot")
     state: Mapped[SnapshotState] = mapped_column(
         SqlEnum(SnapshotState), default=SnapshotState.NOT_BUILT
     )
@@ -66,3 +67,11 @@ class Snapshot(Base):
         if existing:
             raise ValueError(f"The field {key} should not be updated!")
         return value
+
+class SnapshotLabel(Base):
+    __tablename__ = "snapshot_labels"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    snapshot_global_id: Mapped[str] = mapped_column(ForeignKey("snapshots.global_id"))
+    snapshot: Mapped["Snapshot"] = relationship(back_populates="labels")

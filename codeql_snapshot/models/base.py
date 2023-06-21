@@ -3,9 +3,9 @@ from sqlalchemy.orm import (
     MappedAsDataclass,
     Mapped,
     mapped_column,
-    validates,
+    validates
 )
-from sqlalchemy import event
+from sqlalchemy import event, MetaData
 from datetime import datetime
 from typing import Any
 
@@ -29,4 +29,12 @@ def receive_before_update(mapper: Any, connection: Any, target: TimeStampMixin):
 
 
 class Base(MappedAsDataclass, DeclarativeBase, TimeStampMixin):
-    pass
+    # Add explicit naming convention for deterministic database migrations.
+    # https://alembic.sqlalchemy.org/en/latest/naming.html
+    metadata = MetaData(naming_convention={
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_`%(constraint_name)s`",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s"
+    })
