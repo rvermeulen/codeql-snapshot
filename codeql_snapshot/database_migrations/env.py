@@ -6,6 +6,7 @@ from alembic import context
 
 from os import getenv
 from sys import exit, stderr
+from pathlib import Path
 
 CONNECTION_STRING_KEY = "CODEQL_SNAPSHOT_CONNECTION_STRING"
 
@@ -26,6 +27,14 @@ config = context.config
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Add the parent directory to the path if this module is run directly (i.e. not imported)
+# This is necessary to support both the Poetry script invocation and the direct invocation.
+if not __package__ and __name__ == "env_py":
+    import sys
+
+    sys.path.append(str(Path(__file__).parent.parent.parent))
+    __package__ = Path(__file__).parent.parent.name
 
 from codeql_snapshot.models.base import Base
 target_metadata = Base.metadata

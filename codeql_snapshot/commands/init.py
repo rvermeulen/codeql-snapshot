@@ -13,6 +13,8 @@ def command(
         raise click.ClickException(f"Cannot find Alembic config file at {alembic_config_path}!")
     
     alembic_config = Config(alembic_config_path)
+    # Prefix script location with root directory to support both Poetry script invocation and direct invocation
+    alembic_config.set_main_option('script_location', str(ctx.obj['root_directory'] / alembic_config.get_main_option('script_location', default='database_migrations')))
     # Initialize database
     upgrade(alembic_config, "head")
 
