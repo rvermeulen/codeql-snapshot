@@ -1,4 +1,4 @@
-from sqlalchemy import String, Enum as SqlEnum, ForeignKey
+from sqlalchemy import String, Enum as SqlEnum, ForeignKey, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
 from sqlalchemy.engine.default import DefaultExecutionContext
 from codeql_snapshot.models import Base
@@ -44,6 +44,13 @@ def get_source_id(context: DefaultExecutionContext) -> str:
     return sha256_hexdigest(f"{project_url}-{branch}-{commit}")
 
 
+snapshot_label_association_table = Table(
+    "snapshot_label_association",
+    Base.metadata,
+    Column("snapshot_global_id", ForeignKey("snapshots.global_id"), primary_key=True),
+    Column("snapshot_label_id", ForeignKey("snapshot_labels.id"), primary_key=True),
+)
+
 class Snapshot(Base):
     __tablename__ = "snapshots"
 
@@ -56,7 +63,7 @@ class Snapshot(Base):
     language: Mapped[SnapshotLanguage] = mapped_column(
         SqlEnum(SnapshotLanguage), primary_key=True
     )
-    labels: Mapped[List["SnapshotLabel"]] = relationship(back_populates="snapshot")
+    labels: Mapped[List["SnapshotLabel"]] = relationship(secondary=snapshot_label_association_table)
     state: Mapped[SnapshotState] = mapped_column(
         SqlEnum(SnapshotState), default=SnapshotState.NOT_BUILT
     )
@@ -73,5 +80,3 @@ class SnapshotLabel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    snapshot_global_id: Mapped[str] = mapped_column(ForeignKey("snapshots.global_id"))
-    snapshot: Mapped["Snapshot"] = relationship(back_populates="labels")
