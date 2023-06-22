@@ -1,12 +1,12 @@
 import click
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from subprocess import run
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 from minio import Minio
 from minio.error import S3Error
-from codeql_snapshot.models import Snapshot, SnapshotState, SnapshotLanguage
+from codeql_snapshot.models import Snapshot, SnapshotState, SnapshotLanguage, SnapshotLabel
 from codeql_snapshot.helpers.zip import ZipError
 from codeql_snapshot.helpers.object_store import has_source_object, create_source_object
 
@@ -23,6 +23,7 @@ from codeql_snapshot.helpers.object_store import has_source_object, create_sourc
     ),
     required=True,
 )
+@click.option("--label", multiple=True, default=["default"])
 @click.argument(
     "source-root", type=click.Path(exists=True, path_type=Path, file_okay=False)
 )
@@ -33,6 +34,7 @@ def command(
     branch: Optional[str],
     commit: Optional[str],
     language: str,
+    label: List[str],
     source_root: Path,
 ):
     if project_url == None:
@@ -59,6 +61,20 @@ def command(
     database_engine: Engine = ctx.obj["database"]["engine"]
 
     with Session(database_engine) as session, session.begin():
+        labels_stmt = select(SnapshotLabel).where(SnapshotLabel.name.in_(label))
+        existing_labels = session.execute(labels_stmt).scalars().all()
+        missing_labels : set[str] = set()
+        labels = [l for l in existing_labels]
+        for label_name in label:
+            if not any(label.name == label_name for label in existing_labels):
+                missing_labels.add(label_name)
+
+        for l in missing_labels:
+            new_label = SnapshotLabel(name=l)
+            labels.append(new_label)
+            with session.begin_nested():
+                session.add(new_label)
+
         stmt = (
             select(Snapshot)
             .where(Snapshot.project_url == project_url)
@@ -121,6 +137,7 @@ def command(
                 branch=branch,
                 commit=commit,
                 language=SnapshotLanguage[language.upper()],
+                labels=labels,
             )
             # Add and commit the new snapshot first so the global id is generated.
             with session.begin_nested():

@@ -1,14 +1,14 @@
 import click
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from codeql_snapshot.helpers.codeql import CodeQL, CodeQLException
 from codeql_snapshot.helpers.object_store import (
     has_database_object,
     get_database_object,
     create_sarif_object,
 )
-from codeql_snapshot.models.snapshot import Snapshot, SnapshotState
+from codeql_snapshot.models.snapshot import Snapshot, SnapshotState, SnapshotLabel
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
@@ -16,13 +16,19 @@ from pathlib import Path
 @click.command(name="analyze")
 @click.option("-s", "--snapshot-global-id")
 @click.option("-r", "--retry", is_flag=True)
+@click.option("-l", "--label", multiple=True, default=["default"])
 @click.pass_context
-def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool) -> None:
+def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool, label: List[str]) -> None:
     database_engine: Engine = ctx.obj["database"]["engine"]
 
     global_id: Optional[str] = None
     with Session(database_engine) as session, session.begin():
-        stmt = select(Snapshot)
+        labels_stmt = select(SnapshotLabel).where(SnapshotLabel.name.in_(label))
+        labels = session.execute(labels_stmt).scalars().all()
+
+        label_ids = [label.id for label in labels]
+
+        stmt = select(Snapshot).where(Snapshot.labels.any(SnapshotLabel.id.in_(label_ids)))
 
         if snapshot_global_id:
             stmt = stmt.where(

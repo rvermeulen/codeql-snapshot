@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from codeql_snapshot.models import Snapshot
 from beautifultable import BeautifulTable
 from shutil import get_terminal_size
-from typing import Dict
+from typing import Dict, Any
 import json
 
 
@@ -19,7 +19,7 @@ def command(ctx: click.Context, format: str):
 
         if format == "table":
             table = BeautifulTable(maxwidth=get_terminal_size()[0])
-            table.columns.header = "Global Id, Source Id, Project Url,Branch,Commit,Language,State,Created At,Updated At".split(
+            table.columns.header = "Global Id, Source Id, Project Url,Branch,Commit,Language,State,Labels,Created At,Updated At".split(
                 ","
             )
             table.columns.alignment = BeautifulTable.ALIGN_LEFT
@@ -33,6 +33,7 @@ def command(ctx: click.Context, format: str):
                         snapshot.commit,
                         snapshot.language.name,
                         snapshot.state.name,
+                        ",".join(map(lambda l: l.name, snapshot.labels)),
                         snapshot.created_at.replace(microsecond=0).isoformat(),
                         snapshot.updated_at.replace(microsecond=0).isoformat(),
                     ]
@@ -40,7 +41,7 @@ def command(ctx: click.Context, format: str):
             click.echo(table)
         elif format == "json":
 
-            def snapshot_to_dict(snapshot: Snapshot) -> Dict[str, str]:
+            def snapshot_to_dict(snapshot: Snapshot) -> Dict[str, Any]:
                 return {
                     "global-id": snapshot.global_id,
                     "source-id": snapshot.source_id,
@@ -49,6 +50,7 @@ def command(ctx: click.Context, format: str):
                     "commit": snapshot.commit,
                     "language": snapshot.language.name,
                     "state": snapshot.state.name,
+                    "labels": list(map(lambda l: l.name, snapshot.labels)),
                     "created-at": snapshot.created_at.replace(
                         microsecond=0
                     ).isoformat(),

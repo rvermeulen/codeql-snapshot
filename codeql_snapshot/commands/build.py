@@ -2,8 +2,8 @@ import click
 from sqlalchemy import select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
-from typing import Optional
-from codeql_snapshot.models import Snapshot, SnapshotState
+from typing import Optional, List
+from codeql_snapshot.models import Snapshot, SnapshotState, SnapshotLabel
 from codeql_snapshot.helpers.object_store import (
     has_source_object,
     get_source_object,
@@ -23,6 +23,7 @@ import shlex
 @click.option("-c", "--command")
 @click.option("-x", "--exec")
 @click.option("-r", "--retry", is_flag=True)
+@click.option("-l", "--label", multiple=True, default=["default"])
 @click.pass_context
 def command(
     ctx: click.Context,
@@ -30,6 +31,7 @@ def command(
     command: Optional[str],
     exec: Optional[str],
     retry: bool,
+    label: List[str],
 ):
 
     if command and exec:
@@ -42,7 +44,12 @@ def command(
     language: Optional[str] = None
     with Session(database_engine) as session, session.begin():
 
-        stmt = select(Snapshot)
+        labels_stmt = select(SnapshotLabel).where(SnapshotLabel.name.in_(label))
+        labels = session.execute(labels_stmt).scalars().all()
+
+        label_ids = [label.id for label in labels]
+
+        stmt = select(Snapshot).where(Snapshot.labels.any(SnapshotLabel.id.in_(label_ids)))
 
         if snapshot_global_id:
             stmt = stmt.where(
