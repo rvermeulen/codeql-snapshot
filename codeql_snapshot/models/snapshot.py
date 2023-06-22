@@ -78,5 +78,5 @@ class Snapshot(Base):
 class SnapshotLabel(Base):
     __tablename__ = "snapshot_labels"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
