@@ -30,7 +30,7 @@ def upgrade() -> None:
     sa.Column('state', state_enum, nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('project_url', 'branch', 'commit', 'language')
+    sa.PrimaryKeyConstraint('project_url', 'branch', 'commit', 'language', name=op.f('pk_snapshots'))
     )
     # ### end Alembic commands ###
 
