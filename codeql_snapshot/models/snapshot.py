@@ -45,8 +45,8 @@ def get_source_id(context: DefaultExecutionContext) -> str:
 class Snapshot(Base):
     __tablename__ = "snapshots"
 
-    global_id: Mapped[str] = mapped_column(default=get_global_id, init=False, unique=True)
-    source_id: Mapped[str] = mapped_column(default=get_source_id, init=False)
+    global_id: Mapped[str] = mapped_column(String(64), default=get_global_id, init=False, unique=True)
+    source_id: Mapped[str] = mapped_column(String(64), default=get_source_id, init=False)
     # https://support.microsoft.com/en-us/topic/maximum-url-length-is-2-083-characters-in-internet-explorer-174e7c8a-6666-f4e0-6fd6-908b53c12246
     project_url: Mapped[str] = mapped_column(String(2048), primary_key=True)
     branch: Mapped[str] = mapped_column(String(255), primary_key=True)
