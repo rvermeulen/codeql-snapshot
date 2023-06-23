@@ -8,7 +8,7 @@ from codeql_snapshot.helpers.object_store import (
     get_database_object,
     create_sarif_object,
 )
-from codeql_snapshot.models.snapshot import Snapshot, SnapshotState, SnapshotLabel
+from codeql_snapshot.models.snapshot import Snapshot, SnapshotState
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
@@ -23,12 +23,7 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool, 
 
     global_id: Optional[str] = None
     with Session(database_engine) as session, session.begin():
-        labels_stmt = select(SnapshotLabel).where(SnapshotLabel.name.in_(label))
-        labels = session.execute(labels_stmt).scalars().all()
-
-        label_ids = [label.id for label in labels]
-
-        stmt = select(Snapshot).where(Snapshot.labels.any(SnapshotLabel.id.in_(label_ids)))
+        stmt = select(Snapshot).where(Snapshot.label == label)
 
         if snapshot_global_id:
             stmt = stmt.where(

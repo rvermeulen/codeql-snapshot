@@ -33,7 +33,7 @@ def command(ctx: click.Context, format: str):
                         snapshot.commit,
                         snapshot.language.name,
                         snapshot.state.name,
-                        ",".join(map(lambda l: l.name, snapshot.labels)),
+                        snapshot.label,
                         snapshot.created_at.replace(microsecond=0).isoformat(),
                         snapshot.updated_at.replace(microsecond=0).isoformat(),
                     ]
@@ -50,7 +50,7 @@ def command(ctx: click.Context, format: str):
                     "commit": snapshot.commit,
                     "language": snapshot.language.name,
                     "state": snapshot.state.name,
-                    "labels": list(map(lambda l: l.name, snapshot.labels)),
+                    "label": snapshot.label,
                     "created-at": snapshot.created_at.replace(
                         microsecond=0
                     ).isoformat(),

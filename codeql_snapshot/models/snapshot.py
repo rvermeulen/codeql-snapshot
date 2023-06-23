@@ -1,9 +1,9 @@
-from sqlalchemy import String, Enum as SqlEnum, ForeignKey, Table, Column
-from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
+from sqlalchemy import String, Enum as SqlEnum
+from sqlalchemy.orm import Mapped, mapped_column, validates
 from sqlalchemy.engine.default import DefaultExecutionContext
 from codeql_snapshot.models import Base
 from enum import Enum
-from typing import Any, List
+from typing import Any
 from codeql_snapshot.helpers.hash import sha256_hexdigest
 
 
@@ -28,7 +28,6 @@ class SnapshotLanguage(Enum):
     GO = "go"
     CSHARP = "csharp"
 
-
 def get_global_id(context: DefaultExecutionContext) -> str:
     project_url = context.get_current_parameters()["project_url"]
     branch = context.get_current_parameters()["branch"]
@@ -43,14 +42,6 @@ def get_source_id(context: DefaultExecutionContext) -> str:
     commit = context.get_current_parameters()["commit"]
     return sha256_hexdigest(f"{project_url}-{branch}-{commit}")
 
-
-snapshot_label_association_table = Table(
-    "snapshot_label_association",
-    Base.metadata,
-    Column("snapshot_global_id", ForeignKey("snapshots.global_id"), primary_key=True),
-    Column("snapshot_label_id", ForeignKey("snapshot_labels.id"), primary_key=True),
-)
-
 class Snapshot(Base):
     __tablename__ = "snapshots"
 
@@ -63,7 +54,7 @@ class Snapshot(Base):
     language: Mapped[SnapshotLanguage] = mapped_column(
         SqlEnum(SnapshotLanguage), primary_key=True
     )
-    labels: Mapped[List["SnapshotLabel"]] = relationship(secondary=snapshot_label_association_table)
+    label: Mapped[str] = mapped_column(String(255), default="default")
     state: Mapped[SnapshotState] = mapped_column(
         SqlEnum(SnapshotState), default=SnapshotState.NOT_BUILT
     )
@@ -74,9 +65,3 @@ class Snapshot(Base):
         if existing:
             raise ValueError(f"The field {key} should not be updated!")
         return value
-
-class SnapshotLabel(Base):
-    __tablename__ = "snapshot_labels"
-
-    id: Mapped[int] = mapped_column(init=False, primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
