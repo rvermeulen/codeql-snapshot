@@ -31,6 +31,8 @@ class LazyMultiCommand(click.MultiCommand):
     def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
         namespace: dict[str, Any] = {}
         command_module_path = (commands_directory / cmd_name).with_suffix(".py")
+        if not command_module_path.exists():
+            return None
         with command_module_path.open(mode="r") as fd:
             code = compile(fd.read(), command_module_path, "exec")
             eval(code, namespace, namespace)
