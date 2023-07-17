@@ -22,6 +22,7 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool, 
     database_engine: Engine = ctx.obj["database"]["engine"]
 
     global_id: Optional[str] = None
+    category: Optional[str] = None
     with Session(database_engine) as session, session.begin():
         stmt = select(Snapshot).where(Snapshot.label == label)
 
@@ -41,6 +42,7 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool, 
         if snapshot:
             snapshot.state = SnapshotState.ANALYSIS_IN_PROGRESS
             global_id = snapshot.global_id
+            category = snapshot.category
 
     if global_id:
         if has_database_object(ctx, global_id):
@@ -56,7 +58,10 @@ def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool, 
                     database_path = tmpzip.with_suffix("")
                     sarif_path = database_path.with_suffix(".sarif")
 
-                    codeql.database_analyze(database_path, sarif_path)
+                    if category:
+                        codeql.database_analyze(database_path, sarif_path, **{"sarif-category": category})
+                    else:
+                        codeql.database_analyze(database_path, sarif_path)
                     create_sarif_object(ctx, global_id, sarif_path)
 
                     newstate = SnapshotState.ANALYZED
