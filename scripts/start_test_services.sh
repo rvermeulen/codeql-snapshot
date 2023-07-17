@@ -6,7 +6,7 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 function clean_up_secrets() {
-    rm -f "$SCRIPT_DIR/postgres.env" "$SCRIPT_DIR/minio.env" "$SCRIPT_DIR/codeql-snapshot.env"
+    rm -f "$SCRIPT_DIR/postgres.env" "$SCRIPT_DIR/minio.env" "$SCRIPT_DIR/codeql-snapshot.env" "$SCRIPT_DIR/pgadmin.env"
 }
 
 function clean_up() {
@@ -24,12 +24,18 @@ postgres_root_password=$(openssl rand -hex 32)
 minio_access_key=$(openssl rand -hex 32)
 minio_secret_key=$(openssl rand -hex 32)
 
+pgadmin_default_email="admin@pgadmin.org"
+pgadmin_root_password=$(openssl rand -hex 32)
+
 echo "MINIO_ROOT_USER=minio" > "$SCRIPT_DIR/minio.env"
 echo "MINIO_ROOT_PASSWORD=$minio_root_password" >> "$SCRIPT_DIR/minio.env"
 
 echo "POSTGRES_DB=codeql-snapshot" > "$SCRIPT_DIR/postgres.env"
 echo "POSTGRES_PASSWORD=$postgres_root_password" >> "$SCRIPT_DIR/postgres.env"
 
+echo "PGADMIN_DEFAULT_EMAIL=$pgadmin_default_email" > "$SCRIPT_DIR/pgadmin.env"
+echo "PGADMIN_DEFAULT_PASSWORD=$pgadmin_root_password" >> "$SCRIPT_DIR/pgadmin.env"
+echo "PGADMIN_DISABLE_POSTFIX=1" >> "$SCRIPT_DIR/pgadmin.env"
 
 echo "Starting object storage and database"
 docker-compose -f "$SCRIPT_DIR/docker-compose.yml" up -d --wait

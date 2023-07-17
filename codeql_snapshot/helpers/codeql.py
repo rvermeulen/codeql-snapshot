@@ -82,15 +82,15 @@ class CodeQL:
         if cp.returncode != 0:
             raise CodeQLException(f"Failed to run {cp.args} command!")
 
-    def database_analyze(self, database: Path, sarif: Path) -> None:
+    def database_analyze(self, database: Path, sarif: Path, **kwargs: str) -> None:
         cp = self._exec(
             "database",
             "analyze",
             "--format=sarifv2.1.0",
             f"--output={sarif}",
             "--sarif-add-file-contents",
-            "--",
-            str(database),
+            *[f"--{key}={value}" for key, value in kwargs.items()],
+            str(database)
         )
 
         if cp.returncode != 0:

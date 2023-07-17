@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, validates
 from sqlalchemy.engine.default import DefaultExecutionContext
 from codeql_snapshot.models import Base
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 from codeql_snapshot.helpers.hash import sha256_hexdigest
 
 
@@ -33,7 +33,11 @@ def get_global_id(context: DefaultExecutionContext) -> str:
     branch = context.get_current_parameters()["branch"]
     commit = context.get_current_parameters()["commit"]
     language = context.get_current_parameters()["language"]
-    return sha256_hexdigest(f"{project_url}-{branch}-{commit}-{language}")
+    category = context.get_current_parameters()["category"]
+    if category:
+        return sha256_hexdigest(f"{project_url}-{branch}-{commit}-{language}-{category}")
+    else:
+        return sha256_hexdigest(f"{project_url}-{branch}-{commit}-{language}")
 
 
 def get_source_id(context: DefaultExecutionContext) -> str:
@@ -45,21 +49,22 @@ def get_source_id(context: DefaultExecutionContext) -> str:
 class Snapshot(Base):
     __tablename__ = "snapshots"
 
-    global_id: Mapped[str] = mapped_column(String(64), default=get_global_id, init=False, unique=True)
+    global_id: Mapped[str] = mapped_column(String(64), default=get_global_id, init=False, primary_key=True)
     source_id: Mapped[str] = mapped_column(String(64), default=get_source_id, init=False)
     # https://support.microsoft.com/en-us/topic/maximum-url-length-is-2-083-characters-in-internet-explorer-174e7c8a-6666-f4e0-6fd6-908b53c12246
-    project_url: Mapped[str] = mapped_column(String(2048), primary_key=True)
-    branch: Mapped[str] = mapped_column(String(255), primary_key=True)
-    commit: Mapped[str] = mapped_column(String(40), primary_key=True)
+    project_url: Mapped[str] = mapped_column(String(2048))
+    branch: Mapped[str] = mapped_column(String(255))
+    commit: Mapped[str] = mapped_column(String(40))
     language: Mapped[SnapshotLanguage] = mapped_column(
         SqlEnum(SnapshotLanguage), primary_key=True
     )
+    category: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     label: Mapped[str] = mapped_column(String(255), default="default")
     state: Mapped[SnapshotState] = mapped_column(
         SqlEnum(SnapshotState), default=SnapshotState.NOT_BUILT
     )
 
-    @validates("global_id", "source_id", "project_url", "branch", "commit", "language")
+    @validates("global_id", "source_id", "project_url", "branch", "commit", "language", "category")
     def ensure_write_once(self, key: str, value: Any) -> Any:
         existing = getattr(self, key)
         if existing:
