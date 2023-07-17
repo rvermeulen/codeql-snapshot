@@ -13,3 +13,13 @@ services:
       - 5432:5432
     env_file: ./postgres.env
 
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - 8080:80
+    env_file: ./pgadmin.env
+    volumes:
+      - ./pgadmin4_servers.json:/pgadmin4/servers.json
+    depends_on:
+            - database
+
