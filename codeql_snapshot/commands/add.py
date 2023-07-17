@@ -23,6 +23,7 @@ from codeql_snapshot.helpers.object_store import has_source_object, create_sourc
     ),
     required=True,
 )
+@click.option("--category")
 @click.option("--label", default="default")
 @click.argument(
     "source-root", type=click.Path(exists=True, path_type=Path, file_okay=False)
@@ -34,6 +35,7 @@ def command(
     branch: Optional[str],
     commit: Optional[str],
     language: str,
+    category: Optional[str],
     label: str,
     source_root: Path,
 ):
@@ -67,6 +69,7 @@ def command(
             .where(Snapshot.branch == branch)
             .where(Snapshot.commit == commit)
             .where(Snapshot.language == SnapshotLanguage[language.upper()])
+            .where(Snapshot.category == category)
         )
         existing_snapshot = session.scalar(stmt)
         if existing_snapshot:
@@ -123,6 +126,7 @@ def command(
                 branch=branch,
                 commit=commit,
                 language=SnapshotLanguage[language.upper()],
+                category=category,
                 label=label,
             )
             # Add and commit the new snapshot first so the global id is generated.
