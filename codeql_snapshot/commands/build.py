@@ -23,7 +23,7 @@ import shlex
 @click.option("-c", "--command")
 @click.option("-x", "--exec")
 @click.option("-r", "--retry", is_flag=True)
-@click.option("-l", "--label", multiple=True, default=["default"])
+@click.option("-l", "--label")
 @click.pass_context
 def command(
     ctx: click.Context,
@@ -31,7 +31,7 @@ def command(
     command: Optional[str],
     exec: Optional[str],
     retry: bool,
-    label: List[str],
+    label: Optional[str],
 ):
 
     if command and exec:

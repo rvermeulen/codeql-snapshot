@@ -16,9 +16,9 @@ from pathlib import Path
 @click.command(name="analyze")
 @click.option("-s", "--snapshot-global-id")
 @click.option("-r", "--retry", is_flag=True)
-@click.option("-l", "--label", multiple=True, default=["default"])
+@click.option("-l", "--label")
 @click.pass_context
-def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool, label: List[str]) -> None:
+def command(ctx: click.Context, snapshot_global_id: Optional[str], retry: bool, label: Optional[str]) -> None:
     database_engine: Engine = ctx.obj["database"]["engine"]
 
     global_id: Optional[str] = None
