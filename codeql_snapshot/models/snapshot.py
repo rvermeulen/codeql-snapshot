@@ -59,7 +59,7 @@ class Snapshot(Base):
         SqlEnum(SnapshotLanguage), primary_key=True
     )
     category: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    label: Mapped[str] = mapped_column(String(255), default="default")
+    label: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     state: Mapped[SnapshotState] = mapped_column(
         SqlEnum(SnapshotState), default=SnapshotState.NOT_BUILT
     )

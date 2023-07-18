@@ -24,7 +24,7 @@ from codeql_snapshot.helpers.object_store import has_source_object, create_sourc
     required=True,
 )
 @click.option("--category")
-@click.option("--label", default="default")
+@click.option("--label")
 @click.argument(
     "source-root", type=click.Path(exists=True, path_type=Path, file_okay=False)
 )
@@ -36,7 +36,7 @@ def command(
     commit: Optional[str],
     language: str,
     category: Optional[str],
-    label: str,
+    label: Optional[str],
     source_root: Path,
 ):
     if project_url == None:
